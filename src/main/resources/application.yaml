@@ -1,3 +1,39 @@
 spring:
   application:
     name: nasiya-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nasiya
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:root123}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    open-in-view: false
+server:
+  port: 8080
+
+jwt:
+  token:
+    ttl: 86400000
+  secretkey: ${JWT_SECRET:SUPEREXTRACHOICE}
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+app:
+  backup:
+    cron: "0 0 1 1 * ?"
+
+logging:
+  level:
+    root: INFO
+
+security:
+  whitelist: /auth/**,/swagger-ui/**,/swagger-ui.html,/v3/api-docs/**
+
+
