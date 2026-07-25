@@ -62,21 +62,17 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOriginPatterns(List.of(
-                "http://localhost:5173",
                 "http://localhost:3000",
                 "http://localhost:5173",
-                "https://hotdogn1.uz",
-                "http://hotdogn1.uz",
-                "https://hotdogn1.uz",
-                "http://www.hotdogn1.uz",
-                "https://www.hotdogn1.uz"
-
-
+                "http://x-nasiya.uz",
+                "https://x-nasiya.uz",
+                "http://www.x-nasiya.uz",
+                "https://www.x-nasiya.uz"
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("Authorization")); // token clientga qaytishi uchun
+        config.setExposedHeaders(List.of("Authorization")); // Token frontendga ko'rinishi uchun
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
