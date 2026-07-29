@@ -1,4 +1,4 @@
-package xurshid_azizbek.com.example.nasiyabackend.payload;
+package xurshid_azizbek.com.example.nasiyabackend.payload.response;
 
 import lombok.*;
 import org.springframework.http.HttpStatus;

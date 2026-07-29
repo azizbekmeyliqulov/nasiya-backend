@@ -5,9 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import xurshid_azizbek.com.example.nasiyabackend.entity.enums.Role;
-import xurshid_azizbek.com.example.nasiyabackend.payload.ApiResponse;
-import xurshid_azizbek.com.example.nasiyabackend.payload.AuthLogin;
-import xurshid_azizbek.com.example.nasiyabackend.payload.AuthRegister;
+import xurshid_azizbek.com.example.nasiyabackend.payload.response.ApiResponse;
+import xurshid_azizbek.com.example.nasiyabackend.payload.auth.AuthLogin;
+import xurshid_azizbek.com.example.nasiyabackend.payload.auth.AuthRegister;
 import xurshid_azizbek.com.example.nasiyabackend.service.AuthService;
 
 @RestController

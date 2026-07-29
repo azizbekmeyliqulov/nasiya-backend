@@ -7,10 +7,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import xurshid_azizbek.com.example.nasiyabackend.entity.User;
 import xurshid_azizbek.com.example.nasiyabackend.entity.enums.Role;
-import xurshid_azizbek.com.example.nasiyabackend.payload.ApiResponse;
-import xurshid_azizbek.com.example.nasiyabackend.payload.AuthLogin;
-import xurshid_azizbek.com.example.nasiyabackend.payload.AuthRegister;
-import xurshid_azizbek.com.example.nasiyabackend.payload.AuthResponse;
+import xurshid_azizbek.com.example.nasiyabackend.payload.response.ApiResponse;
+import xurshid_azizbek.com.example.nasiyabackend.payload.auth.AuthLogin;
+import xurshid_azizbek.com.example.nasiyabackend.payload.auth.AuthRegister;
+import xurshid_azizbek.com.example.nasiyabackend.payload.response.AuthResponse;
 import xurshid_azizbek.com.example.nasiyabackend.repository.UserRepository;
 import xurshid_azizbek.com.example.nasiyabackend.security.JwtProvider;
 

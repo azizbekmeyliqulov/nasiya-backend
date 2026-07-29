@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import xurshid_azizbek.com.example.nasiyabackend.payload.ApiResponse;
+import xurshid_azizbek.com.example.nasiyabackend.payload.response.ApiResponse;
 
 import java.util.stream.Collectors;
 

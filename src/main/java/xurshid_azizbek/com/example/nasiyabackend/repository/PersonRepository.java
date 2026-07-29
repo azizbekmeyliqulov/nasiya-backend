@@ -1,0 +1,19 @@
+package xurshid_azizbek.com.example.nasiyabackend.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+import xurshid_azizbek.com.example.nasiyabackend.entity.Mahalla;
+import xurshid_azizbek.com.example.nasiyabackend.entity.Person;
+import xurshid_azizbek.com.example.nasiyabackend.entity.User;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface PersonRepository extends JpaRepository<Person, Integer> {
+    List<Person> findAllByMahallaOrderByNumberAsc(Mahalla mahalla);
+    Optional<Person> findByIdAndMahalla_User(Integer id, User user);  // egalik tekshiruvi
+    @Query("SELECT COALESCE(MAX(p.number), 0) FROM Person p WHERE p.mahalla = :mahalla")
+    Integer findMaxNumberByMahalla(Mahalla mahalla);
+}
