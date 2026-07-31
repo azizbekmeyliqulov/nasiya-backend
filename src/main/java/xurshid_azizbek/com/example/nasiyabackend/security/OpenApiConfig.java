@@ -14,8 +14,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @OpenAPIDefinition(
         servers = {
-                @Server(url = "https://x-nasiya.uz", description = "Production Server (HTTPS)"),
-                @Server(url = "http://localhost:8080", description = "Local Development")
+                @Server(url = "https://x-nasiya.uz/api", description = "Production Server (HTTPS)"),
+                @Server(url = "http://localhost:8080/api", description = "Local Development")
         },
         info = @Info(title = "Nasiya", version = "v1",
                 description = "This API just for learning Spring boot features",

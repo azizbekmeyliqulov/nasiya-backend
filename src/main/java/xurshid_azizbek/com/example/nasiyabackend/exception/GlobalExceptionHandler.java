@@ -1,5 +1,6 @@
 package xurshid_azizbek.com.example.nasiyabackend.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -8,20 +9,49 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import xurshid_azizbek.com.example.nasiyabackend.payload.response.ApiResponse;
 
 import java.util.stream.Collectors;
-
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ApiResponse> notFound(NotFoundException ex){
-        ApiResponse apiResponse= ApiResponse.builder()
-                .message(ex.getMessage())
+    // Barcha handlerlar shu metod orqali javob quradi — takrorlanishni yo'qotish uchun
+    private ResponseEntity<ApiResponse> buildResponse(String message, HttpStatus status) {
+        ApiResponse apiResponse = ApiResponse.builder()
+                .message(message)
                 .success(false)
-                .status(HttpStatus.NOT_FOUND)
+                .status(status)
                 .body(null)
                 .build();
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
+        return ResponseEntity.status(status).body(apiResponse);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiResponse> notFound(NotFoundException ex) {
+        log.warn("Not Found: {}", ex.getMessage(),ex);
+        return buildResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse> resourceNotFound(ResourceNotFoundException ex) {
+        log.warn("Resource not found: {}", ex.getMessage(),ex);
+        return buildResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiResponse> userNotFound(UserNotFoundException ex) {
+        log.warn("User not found: {}", ex.getMessage(),ex);
+        return buildResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(AlreadyNameException.class)
+    public ResponseEntity<ApiResponse> alreadyName(AlreadyNameException ex) {
+        log.warn("Already Name Exception: {}", ex.getMessage(),ex);
+        return buildResponse(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiResponse> badRequest(BadRequestException ex) {
+        log.warn("Bad Request: {}",ex.getMessage(),ex);
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -31,54 +61,14 @@ public class GlobalExceptionHandler {
                 .stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
-
-        ApiResponse response = ApiResponse.builder()
-                .message(message)
-                .success(false)
-                .status(HttpStatus.BAD_REQUEST)
-                .body(null)
-                .build();
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        log.warn("Validation Exception: {}",ex.getMessage(),message);
+        return buildResponse(message, HttpStatus.BAD_REQUEST);
     }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleOther(Exception ex) {
-        ApiResponse response = ApiResponse.builder()
-                .message(ex.getMessage())
-                .success(false)
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(null)
-                .build();
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    }
-    @ExceptionHandler(AlreadyNameException.class)
-    public ResponseEntity<ApiResponse> alreadyName(AlreadyNameException ex){
-        ApiResponse apiResponse=ApiResponse.builder()
-                .message(ex.getMessage())
-                .success(false)
-                .status(HttpStatus.CONFLICT)
-                .body(null)
-                .build();
-        return ResponseEntity.status(apiResponse.getStatus()).body(apiResponse);
-    }
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ApiResponse>  badRequest(BadRequestException ex){
-        ApiResponse apiResponse=ApiResponse.builder()
-                .message(ex.getMessage())
-                .success(false)
-                .status(HttpStatus.BAD_REQUEST)
-                .body(null)
-                .build();
-        return ResponseEntity.status(apiResponse.getStatus()).body(apiResponse);
-    }
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse> resourceNotFount(ResourceNotFoundException exception){
-        ApiResponse apiResponse=ApiResponse.builder()
-                .message(exception.getMessage())
-                .success(false)
-                .status(HttpStatus.NOT_FOUND)
-                .body(null)
-                .build();
-        return ResponseEntity.status(apiResponse.getStatus()).body(apiResponse);
+        log.error("Kutilmagan xatolik: {} ", ex.getMessage(), ex);
+        // Ichki xato matnini clientga chiqarmaymiz — xavfsizlik uchun
+        return buildResponse("Serverda xatolik yuz berdi", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
