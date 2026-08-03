@@ -13,29 +13,29 @@ import org.springframework.data.annotation.LastModifiedBy;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
-@SuperBuilder
-@MappedSuperclass
-public abstract class AbsEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @SuperBuilder
+    @MappedSuperclass
+    public abstract class AbsEntity {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Integer id;
 
-    @CreationTimestamp
-    private LocalDateTime createdAt;
+        @CreationTimestamp
+        private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
+        @UpdateTimestamp
+        private LocalDateTime updatedAt;
 
-    @CreatedBy
-    private Integer createdBy;
+        @CreatedBy
+        private Integer createdBy;
 
-    @LastModifiedBy
-    private Integer updatedBy;
+        @LastModifiedBy
+        private Integer updatedBy;
 
-    @Builder.Default
-    private Boolean isDeleted = false;
-}
+        @Builder.Default
+        private Boolean isDeleted = false;
+    }

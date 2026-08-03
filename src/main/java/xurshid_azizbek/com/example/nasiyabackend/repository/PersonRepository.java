@@ -12,8 +12,12 @@ import java.util.Optional;
 
 @Repository
 public interface PersonRepository extends JpaRepository<Person, Integer> {
-    List<Person> findAllByMahallaOrderByNumberAsc(Mahalla mahalla);
-    Optional<Person> findByIdAndMahalla_User(Integer id, User user);  // egalik tekshiruvi
+
+    List<Person> findAllByMahallaAndCreatedByAndIsDeletedFalseOrderByNumberAsc(Mahalla mahalla, Integer createdBy);
+
+    Optional<Person> findByIdAndCreatedByAndIsDeletedFalse(Integer id, Integer createdBy);
+
+    // isDeleted filtrsiz — raqam hech qachon qayta ishlatilmasligi kerak
     @Query("SELECT COALESCE(MAX(p.number), 0) FROM Person p WHERE p.mahalla = :mahalla")
     Integer findMaxNumberByMahalla(Mahalla mahalla);
 }
