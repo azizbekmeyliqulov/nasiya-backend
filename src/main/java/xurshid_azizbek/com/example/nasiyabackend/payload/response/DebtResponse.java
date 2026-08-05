@@ -11,7 +11,8 @@ public record DebtResponse(
         String takenByName,
         List<String> products,
         String note,
+        boolean settled,
+        LocalDateTime settledAt,
         LocalDateTime createdAt
-
 ) {
 }
