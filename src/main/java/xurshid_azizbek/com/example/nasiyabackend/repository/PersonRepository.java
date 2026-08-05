@@ -13,6 +13,11 @@ import java.util.Optional;
 @Repository
 public interface PersonRepository extends JpaRepository<Person, Integer> {
 
+    boolean existsByMahallaAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndIsDeletedFalse(
+            Mahalla mahalla, String firstName, String lastName);
+    List<Person> findAllByMahallaAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndIsDeletedFalse(
+            Mahalla mahalla, String firstName, String lastName);
+
     List<Person> findAllByMahallaAndCreatedByAndIsDeletedFalseOrderByNumberAsc(Mahalla mahalla, Integer createdBy);
 
     Optional<Person> findByIdAndCreatedByAndIsDeletedFalse(Integer id, Integer createdBy);

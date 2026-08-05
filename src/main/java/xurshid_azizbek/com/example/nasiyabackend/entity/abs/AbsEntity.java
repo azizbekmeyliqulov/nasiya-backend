@@ -1,15 +1,13 @@
 package xurshid_azizbek.com.example.nasiyabackend.entity.abs;
 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
@@ -19,6 +17,7 @@ import java.time.LocalDateTime;
     @NoArgsConstructor
     @SuperBuilder
     @MappedSuperclass
+    @EntityListeners(AuditingEntityListener.class)
     public abstract class AbsEntity {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
