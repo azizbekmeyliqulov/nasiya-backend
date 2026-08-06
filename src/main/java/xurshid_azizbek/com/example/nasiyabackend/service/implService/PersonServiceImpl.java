@@ -10,14 +10,19 @@ import xurshid_azizbek.com.example.nasiyabackend.entity.User;
 import xurshid_azizbek.com.example.nasiyabackend.exception.AlreadyNameException;
 import xurshid_azizbek.com.example.nasiyabackend.exception.NotFoundException;
 import xurshid_azizbek.com.example.nasiyabackend.mapper.PersonMapper;
+import xurshid_azizbek.com.example.nasiyabackend.payload.request.PersonDueDateRequest;
 import xurshid_azizbek.com.example.nasiyabackend.payload.request.PersonRequest;
 import xurshid_azizbek.com.example.nasiyabackend.payload.response.ApiResponse;
 import xurshid_azizbek.com.example.nasiyabackend.payload.response.PersonResponse;
+import xurshid_azizbek.com.example.nasiyabackend.repository.DebtRepository;
 import xurshid_azizbek.com.example.nasiyabackend.repository.MahallaRepository;
 import xurshid_azizbek.com.example.nasiyabackend.repository.PersonRepository;
+import xurshid_azizbek.com.example.nasiyabackend.repository.projection.PersonBalanceProjection;
 import xurshid_azizbek.com.example.nasiyabackend.service.interfaceService.PersonService;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -27,6 +32,7 @@ public class PersonServiceImpl implements PersonService {
     private final PersonRepository personRepository;
     private final MahallaRepository mahallaRepository;
     private final PersonMapper personMapper;
+    private final DebtRepository debtRepository;
 
     @Override
     public ApiResponse createPerson(User user, Integer mahallaId, PersonRequest personRequest) {
@@ -54,6 +60,12 @@ public class PersonServiceImpl implements PersonService {
     public ApiResponse getAllPerson(User user, Integer mahallaId) {
         log.info("Get all persons mahallaId={},userId={} ", mahallaId, user.getId());
         Mahalla mahalla = mahallaFound(mahallaId, user.getId());
+        List<Person> persons = personRepository.findAllByMahallaIdAndIsDeletedFalse(mahallaId);
+        List<Integer> personIds = persons.stream().map(Person::getId).toList();
+        List<PersonBalanceProjection> balances = debtRepository.sumUnsettledByPersonIds(personIds);
+        Map<Integer, Long> balanceMap = balances.stream()
+                .collect(Collectors.toMap(PersonBalanceProjection::getPersonId, PersonBalanceProjection::getBalance));
+
         List<PersonResponse> list = personRepository.findAllByMahallaAndCreatedByAndIsDeletedFalseOrderByNumberAsc(mahalla, user.getId()).stream().map(
                 person -> personMapper.personToResponse(person, 0L)
         ).toList();
@@ -68,7 +80,8 @@ public class PersonServiceImpl implements PersonService {
     @Override
     public ApiResponse getPersonById(User user, Integer personId) {
         Person person = personFound(personId, user.getId());
-        PersonResponse personResponse = personMapper.personToResponse(person, 0L);
+        Long balance = debtRepository.sumUnsettledByPersonId(personId);
+        PersonResponse personResponse = personMapper.personToResponse(person, balance);
         return new ApiResponse("Person topildi",true,HttpStatus.OK,personResponse);
     }
 
@@ -88,9 +101,9 @@ public class PersonServiceImpl implements PersonService {
 
         personMapper.updateEntity(person, personRequest);
         personRepository.save(person);
-
+        Long balance = debtRepository.sumUnsettledByPersonId(personId);
         log.info("Person yangilandi personId={}, userId:{}", personId, user.getId());
-        return new ApiResponse("Person yangilandi", true, HttpStatus.OK, personMapper.personToResponse(person, 0L));
+        return new ApiResponse("Person yangilandi", true, HttpStatus.OK, personMapper.personToResponse(person, balance));
     }
 
     @Override
@@ -101,6 +114,16 @@ public class PersonServiceImpl implements PersonService {
         personRepository.save(person);
         log.info("Person o'chirildi  personId={},userId:{} ", personId, user.getId());
         return new ApiResponse("Person o'chirildi ",true,HttpStatus.OK,null);
+    }
+
+    @Override
+    public ApiResponse updateDueDate(Integer personId, PersonDueDateRequest request, User currentUser) {
+        log.info("Due date yangilanmoqda personId: {} userId: {}", personId, currentUser.getId());
+        Person person = personFound(personId, currentUser.getId());
+        person.setDueDate(request.dueDate());
+        personRepository.save(person);
+        log.info("Due date yangilandi personId: {} newDueDate: {}", personId, request.dueDate());
+        return new ApiResponse("Muddat yangilandi", true, HttpStatus.OK, personMapper.personToResponse(person,0L));
     }
 
     private Mahalla mahallaFound(Integer mahallaId,Integer userId) {

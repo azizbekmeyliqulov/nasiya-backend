@@ -21,7 +21,7 @@ public interface PersonRepository extends JpaRepository<Person, Integer> {
     List<Person> findAllByMahallaAndCreatedByAndIsDeletedFalseOrderByNumberAsc(Mahalla mahalla, Integer createdBy);
 
     Optional<Person> findByIdAndCreatedByAndIsDeletedFalse(Integer id, Integer createdBy);
-
+    List<Person>findAllByMahallaIdAndIsDeletedFalse(Integer mahallaId);
     // isDeleted filtrsiz — raqam hech qachon qayta ishlatilmasligi kerak
     @Query("SELECT COALESCE(MAX(p.number), 0) FROM Person p WHERE p.mahalla = :mahalla")
     Integer findMaxNumberByMahalla(Mahalla mahalla);
