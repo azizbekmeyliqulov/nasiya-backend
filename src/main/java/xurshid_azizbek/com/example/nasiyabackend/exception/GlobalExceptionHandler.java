@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import xurshid_azizbek.com.example.nasiyabackend.payload.response.ApiResponse;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
@@ -15,14 +16,19 @@ public class GlobalExceptionHandler {
 
     // Barcha handlerlar shu metod orqali javob quradi — takrorlanishni yo'qotish uchun
     private ResponseEntity<ApiResponse> buildResponse(String message, HttpStatus status) {
+        return buildResponse(message, status, null);
+    }
+
+    private ResponseEntity<ApiResponse> buildResponse(String message, HttpStatus status, Object body) {
         ApiResponse apiResponse = ApiResponse.builder()
                 .message(message)
                 .success(false)
                 .status(status)
-                .body(null)
+                .body(body)
                 .build();
         return ResponseEntity.status(status).body(apiResponse);
     }
+
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiResponse> notFound(NotFoundException ex) {
@@ -39,13 +45,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ApiResponse> userNotFound(UserNotFoundException ex) {
         log.warn("User not found: {}", ex.getMessage(),ex);
+
         return buildResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(AlreadyNameException.class)
     public ResponseEntity<ApiResponse> alreadyName(AlreadyNameException ex) {
-        log.warn("Already Name Exception: {}", ex.getMessage(),ex);
-        return buildResponse(ex.getMessage(), HttpStatus.CONFLICT);
+        log.warn("Already Name Exception: {}", ex.getMessage(), ex);
+        Map<String, Object> body = (ex.getPersonId() != null)
+                ? Map.of("personId", ex.getPersonId(), "number", ex.getNumber())
+                : null;
+        return buildResponse(ex.getMessage(), HttpStatus.CONFLICT, body);
     }
 
     @ExceptionHandler(BadRequestException.class)

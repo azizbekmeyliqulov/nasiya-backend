@@ -2,12 +2,14 @@ package xurshid_azizbek.com.example.nasiyabackend.service.implService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import xurshid_azizbek.com.example.nasiyabackend.entity.Mahalla;
 import xurshid_azizbek.com.example.nasiyabackend.entity.Person;
 import xurshid_azizbek.com.example.nasiyabackend.entity.User;
 import xurshid_azizbek.com.example.nasiyabackend.exception.AlreadyNameException;
+import xurshid_azizbek.com.example.nasiyabackend.exception.BadRequestException;
 import xurshid_azizbek.com.example.nasiyabackend.exception.NotFoundException;
 import xurshid_azizbek.com.example.nasiyabackend.mapper.PersonMapper;
 import xurshid_azizbek.com.example.nasiyabackend.payload.request.PersonDueDateRequest;
@@ -22,6 +24,7 @@ import xurshid_azizbek.com.example.nasiyabackend.service.interfaceService.Person
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -39,18 +42,28 @@ public class PersonServiceImpl implements PersonService {
         log.info("Creating Person mahallaId={}, userId={}", mahallaId, user.getId());
         Mahalla mahalla = mahallaFound(mahallaId, user.getId());
 
-        String firstName = personRequest.firstName() != null ? personRequest.firstName().trim() : "";
-        String lastName = personRequest.lastName() != null ? personRequest.lastName().trim() : "";
-        String phone = (personRequest.phone() != null && !personRequest.phone().trim().isEmpty())
-                ? personRequest.phone().trim() : null;
-        String nickname = (personRequest.nickname() != null && !personRequest.nickname().trim().isEmpty())
-                ? personRequest.nickname().trim() : null;
+        String firstName = norm(personRequest.firstName());
+        String lastName = norm(personRequest.lastName());
+        String nickname = norm(personRequest.nickname());
+        String phone = norm(personRequest.phone());
 
-        checkDuplicatePerson(mahalla, firstName, lastName, phone, nickname, null);
+        if (firstName.isEmpty()) {
+            throw new BadRequestException("Ismni kiriting");
+        }
+
+        checkDuplicatePerson(mahalla, firstName, lastName, nickname, null);
 
         int nextNumber = personRepository.findMaxNumberByMahalla(mahalla) + 1;
-        Person person = personMapper.requestToPerson(mahalla, nextNumber, personRequest);
-        Person save = personRepository.save(person);
+        Person person = personMapper.requestToPerson(mahalla, nextNumber, firstName, lastName, nickname, phone);
+
+        Person save;
+        try {
+            save = personRepository.save(person);
+        } catch (DataIntegrityViolationException e) {
+            // ikkita so'rov bir vaqtda kelgan — DB unique index ushlab qoldi
+            log.info("Race condition: duplicate person on save, mahallaId={}", mahallaId);
+            throw new AlreadyNameException("Bu odam allaqachon qo'shilgan", null, null);
+        }
 
         log.info("Person created id:{}, number:{}, mahalla: {}", save.getId(), save.getNumber(), mahalla.getId());
         return new ApiResponse("Person yaratildi", true, HttpStatus.CREATED, personMapper.personToResponse(save, 0L));
@@ -66,15 +79,16 @@ public class PersonServiceImpl implements PersonService {
         Map<Integer, Long> balanceMap = balances.stream()
                 .collect(Collectors.toMap(PersonBalanceProjection::getPersonId, PersonBalanceProjection::getBalance));
 
-        List<PersonResponse> list = personRepository.findAllByMahallaAndCreatedByAndIsDeletedFalseOrderByNumberAsc(mahalla, user.getId()).stream().map(
-                person -> personMapper.personToResponse(person, 0L)
-        ).toList();
+        List<PersonResponse> list = personRepository.findAllByMahallaAndCreatedByAndIsDeletedFalseOrderByNumberAsc(mahalla, user.getId()).stream()
+                .map(person -> personMapper.personToResponse(person, balanceMap.getOrDefault(person.getId(), 0L)))
+                .toList();
+
         if (list.isEmpty()) {
-            log.info("person not found,mahallaId={}",mahallaId);
-            return new ApiResponse("Odamlar hozircha mavjud emas",true,HttpStatus.OK,list);
+            log.info("person not found,mahallaId={}", mahallaId);
+            return new ApiResponse("Odamlar hozircha mavjud emas", true, HttpStatus.OK, list);
         }
 
-        return new ApiResponse("Odamlar topildi",true,HttpStatus.OK,list);
+        return new ApiResponse("Odamlar topildi", true, HttpStatus.OK, list);
     }
 
     @Override
@@ -82,7 +96,7 @@ public class PersonServiceImpl implements PersonService {
         Person person = personFound(personId, user.getId());
         Long balance = debtRepository.sumUnsettledByPersonId(personId);
         PersonResponse personResponse = personMapper.personToResponse(person, balance);
-        return new ApiResponse("Person topildi",true,HttpStatus.OK,personResponse);
+        return new ApiResponse("Person topildi", true, HttpStatus.OK, personResponse);
     }
 
     @Override
@@ -90,17 +104,26 @@ public class PersonServiceImpl implements PersonService {
         log.info("Personni yangilash personId={}, userId={}", personId, user.getId());
         Person person = personFound(personId, user.getId());
 
-        String firstName = personRequest.firstName() != null ? personRequest.firstName().trim() : "";
-        String lastName = personRequest.lastName() != null ? personRequest.lastName().trim() : "";
-        String phone = (personRequest.phone() != null && !personRequest.phone().trim().isEmpty())
-                ? personRequest.phone().trim() : null;
-        String nickname = (personRequest.nickname() != null && !personRequest.nickname().trim().isEmpty())
-                ? personRequest.nickname().trim() : null;
+        String firstName = norm(personRequest.firstName());
+        String lastName = norm(personRequest.lastName());
+        String nickname = norm(personRequest.nickname());
+        String phone = norm(personRequest.phone());
 
-        checkDuplicatePerson(person.getMahalla(), firstName, lastName, phone, nickname, person.getId());
+        if (firstName.isEmpty()) {
+            throw new BadRequestException("Ismni kiriting");
+        }
 
-        personMapper.updateEntity(person, personRequest);
-        personRepository.save(person);
+        checkDuplicatePerson(person.getMahalla(), firstName, lastName, nickname, person.getId());
+
+        personMapper.updateEntity(person, firstName, lastName, nickname, phone);
+
+        try {
+            personRepository.save(person);
+        } catch (DataIntegrityViolationException e) {
+            log.info("Race condition: duplicate person on update, personId={}", personId);
+            throw new AlreadyNameException("Bu odam allaqachon qo'shilgan", null, null);
+        }
+
         Long balance = debtRepository.sumUnsettledByPersonId(personId);
         log.info("Person yangilandi personId={}, userId:{}", personId, user.getId());
         return new ApiResponse("Person yangilandi", true, HttpStatus.OK, personMapper.personToResponse(person, balance));
@@ -113,7 +136,7 @@ public class PersonServiceImpl implements PersonService {
         person.setIsDeleted(true);
         personRepository.save(person);
         log.info("Person o'chirildi  personId={},userId:{} ", personId, user.getId());
-        return new ApiResponse("Person o'chirildi ",true,HttpStatus.OK,null);
+        return new ApiResponse("Person o'chirildi ", true, HttpStatus.OK, null);
     }
 
     @Override
@@ -123,51 +146,48 @@ public class PersonServiceImpl implements PersonService {
         person.setDueDate(request.dueDate());
         personRepository.save(person);
         log.info("Due date yangilandi personId: {} newDueDate: {}", personId, request.dueDate());
-        return new ApiResponse("Muddat yangilandi", true, HttpStatus.OK, personMapper.personToResponse(person,0L));
+        return new ApiResponse("Muddat yangilandi", true, HttpStatus.OK, personMapper.personToResponse(person, 0L));
     }
 
-    private Mahalla mahallaFound(Integer mahallaId,Integer userId) {
-        return mahallaRepository.findByIdAndUserIdAndIsDeletedFalse(mahallaId, userId).orElseThrow(()-> {
+    private Mahalla mahallaFound(Integer mahallaId, Integer userId) {
+        return mahallaRepository.findByIdAndUserIdAndIsDeletedFalse(mahallaId, userId).orElseThrow(() -> {
                     log.info("Mahalla topilmadi id={},userId={} ", mahallaId, userId);
                     return new NotFoundException("Mahalla topilmadi: " + mahallaId);
                 }
         );
     }
 
-    private Person personFound(Integer personId,Integer userId) {
-        return personRepository.findByIdAndCreatedByAndIsDeletedFalse(personId,userId).orElseThrow(()->{
+    private Person personFound(Integer personId, Integer userId) {
+        return personRepository.findByIdAndCreatedByAndIsDeletedFalse(personId, userId).orElseThrow(() -> {
             log.info("Person topilmadi personId: {} userId: {} ", personId, userId);
             return new NotFoundException("Person topilmadi, id: " + personId);
         });
     }
 
-    private void checkDuplicatePerson(Mahalla mahalla, String firstName, String lastName,
-                                      String phone, String nickname, Integer excludePersonId) {
+    // faqat firstName + lastName + nickname uchligi solishtiriladi — telefon kalitga kirmaydi
+    private void checkDuplicatePerson(Mahalla mahalla, String firstName, String lastName, String nickname, Integer excludePersonId) {
+        Optional<Person> existing = (excludePersonId == null)
+                ? personRepository.findDuplicate(mahalla, firstName, lastName, nickname)
+                : personRepository.findDuplicateExcept(mahalla, firstName, lastName, nickname, excludePersonId);
 
-        final String safePhone = (phone != null && !phone.trim().isEmpty()) ? phone.trim() : null;
-        final String safeNickname = (nickname != null && !nickname.trim().isEmpty()) ? nickname.trim() : null;
+        existing.ifPresent(p -> {
+            log.info("Person duplicate found, mahallaId={}, firstName={}, lastName={}, nickname={}",
+                    mahalla.getId(), firstName, lastName, nickname);
 
-        List<Person> candidates = personRepository
-                .findAllByMahallaAndFirstNameIgnoreCaseAndLastNameIgnoreCaseAndIsDeletedFalse(
-                        mahalla, firstName, lastName);
+            String fullName = lastName.isEmpty() ? firstName : firstName + " " + lastName;
+            String message = nickname.isEmpty()
+                    ? "Bu mahallada «" + fullName + "» allaqachon bor. Farqlash uchun laqab yozing (masalan: kursdosh)"
+                    : "Bu mahallada «" + fullName + " (" + nickname + ")» allaqachon bor";
 
-        boolean duplicateExists = candidates.stream()
-                .filter(p -> excludePersonId == null || !p.getId().equals(excludePersonId))
-                .anyMatch(p -> {
-                    if (safePhone == null && safeNickname == null) {
-                        return true;
-                    }
+            throw new AlreadyNameException(message, p.getId(), p.getNumber());
+        });
+    }
 
-                    boolean samePhone = safePhone != null && safePhone.equalsIgnoreCase(p.getPhone());
-                    boolean sameNickname = safeNickname != null && safeNickname.equalsIgnoreCase(p.getNickname());
-
-                    return samePhone || sameNickname;
-                });
-
-        if (duplicateExists) {
-            log.info("Person duplicate found, mahallaId={}, firstName={}, lastName={}, phone={}, nickname={}",
-                    mahalla.getId(), firstName, lastName, safePhone, safeNickname);
-            throw new AlreadyNameException("Bu ism-familiyadagi odam mahallada allaqachon mavjud yoki kiritilgan raqam/nickname band");
-        }
+    // apostrof turlari + ortiqcha bo'shliqni normallashtirish (registr o'zgarmaydi — ekranda ko'rinishi buzilmasin)
+    private static String norm(String s) {
+        if (s == null) return "";
+        return s.trim()
+                .replaceAll("[ʻʼ‘’`´]", "'")
+                .replaceAll("\\s+", " ");
     }
 }

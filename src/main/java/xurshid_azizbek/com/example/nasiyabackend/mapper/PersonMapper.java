@@ -9,14 +9,14 @@ import xurshid_azizbek.com.example.nasiyabackend.payload.response.PersonResponse
 @Component
 public class PersonMapper {
 
-    public Person requestToPerson(Mahalla mahalla, Integer number, PersonRequest request) {
+    public Person requestToPerson(Mahalla mahalla, Integer number, String firstName, String lastName, String nickname, String phone) {
         return Person.builder()
                 .mahalla(mahalla)
                 .number(number)
-                .firstName(request.firstName().trim())
-                .lastName(request.lastName() == null ? "" : request.lastName().trim())
-                .nickname(request.nickname() == null ? "" : request.nickname().trim())
-                .phone(request.phone() == null ? "" : request.phone().trim())
+                .firstName(firstName)
+                .lastName(lastName)
+                .nickname(nickname)
+                .phone(phone)
                 .build();
     }
 
@@ -34,11 +34,11 @@ public class PersonMapper {
                 person.getCreatedAt()
         );
     }
-    public void updateEntity(Person person, PersonRequest personRequest) {
-        person.setFirstName(personRequest.firstName().trim());
-        person.setLastName(personRequest.lastName() == null ? "" : personRequest.lastName().trim());
-        person.setNickname(personRequest.nickname()== null ? "" : personRequest.nickname().trim());
-        person.setPhone(personRequest.phone()== null ? "" : personRequest.phone().trim());
 
+    public void updateEntity(Person person, String firstName, String lastName, String nickname, String phone) {
+        person.setFirstName(firstName);
+        person.setLastName(lastName);
+        person.setNickname(nickname);
+        person.setPhone(phone);
     }
 }
