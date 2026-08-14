@@ -79,4 +79,14 @@ public class PersonController {
         ApiResponse response = personService.updateDueDate(personId, request, user);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
+    @GetMapping("/mahalla/{mahallaId}/person/search")
+    public ResponseEntity<ApiResponse> searchInMahalla(
+            @PathVariable Integer mahallaId,
+            @RequestParam String keyword,
+            @CurrentUser User user) {
+        ApiResponse response = personService.searchInMahalla(mahallaId, keyword, user);
+        return ResponseEntity.status(response.getStatus()).body(response);
+    }
+
+
 }

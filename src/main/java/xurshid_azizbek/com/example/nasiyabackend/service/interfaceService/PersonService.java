@@ -12,4 +12,6 @@ public interface PersonService {
     ApiResponse updatePerson(User user, Integer personId, PersonRequest personRequest);
     ApiResponse deletePerson(User user, Integer personId);
     ApiResponse updateDueDate(Integer personId, PersonDueDateRequest request, User currentUser);
+    ApiResponse searchInMahalla(Integer mahallaId, String keyword, User currentUser);
+    ApiResponse searchAllMahallas(String keyword, User currentUser);
 }

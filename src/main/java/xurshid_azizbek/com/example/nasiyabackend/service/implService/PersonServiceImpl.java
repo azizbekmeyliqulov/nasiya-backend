@@ -8,14 +8,13 @@ import org.springframework.stereotype.Service;
 import xurshid_azizbek.com.example.nasiyabackend.entity.Mahalla;
 import xurshid_azizbek.com.example.nasiyabackend.entity.Person;
 import xurshid_azizbek.com.example.nasiyabackend.entity.User;
-import xurshid_azizbek.com.example.nasiyabackend.exception.AlreadyNameException;
-import xurshid_azizbek.com.example.nasiyabackend.exception.BadRequestException;
-import xurshid_azizbek.com.example.nasiyabackend.exception.NotFoundException;
+import xurshid_azizbek.com.example.nasiyabackend.exception.*;
 import xurshid_azizbek.com.example.nasiyabackend.mapper.PersonMapper;
 import xurshid_azizbek.com.example.nasiyabackend.payload.request.PersonDueDateRequest;
 import xurshid_azizbek.com.example.nasiyabackend.payload.request.PersonRequest;
 import xurshid_azizbek.com.example.nasiyabackend.payload.response.ApiResponse;
 import xurshid_azizbek.com.example.nasiyabackend.payload.response.PersonResponse;
+import xurshid_azizbek.com.example.nasiyabackend.payload.response.PersonSearchResponse;
 import xurshid_azizbek.com.example.nasiyabackend.repository.DebtRepository;
 import xurshid_azizbek.com.example.nasiyabackend.repository.MahallaRepository;
 import xurshid_azizbek.com.example.nasiyabackend.repository.PersonRepository;
@@ -131,12 +130,19 @@ public class PersonServiceImpl implements PersonService {
 
     @Override
     public ApiResponse deletePerson(User user, Integer personId) {
-        log.info("Person o'chirildi personId={},userId={} ", personId, user.getId());
+        log.info("Personni o'chirish so'rovi:  personId={},userId={} ", personId, user.getId());
         Person person = personFound(personId, user.getId());
-        person.setIsDeleted(true);
-        personRepository.save(person);
-        log.info("Person o'chirildi  personId={},userId:{} ", personId, user.getId());
+        Long l = debtRepository.sumUnsettledByPersonId(personId);
+        if (l == 0) {
+            person.setIsDeleted(true);
+            personRepository.save(person);
+            log.info("Person o'chirildi  personId={},userId:{} ", personId, user.getId());
+        }else {
+            throw new PersonHasDebtException("Qarzi bor odamni o'chirib bulmaydi!");
+        }
         return new ApiResponse("Person o'chirildi ", true, HttpStatus.OK, null);
+
+
     }
 
     @Override
@@ -147,6 +153,24 @@ public class PersonServiceImpl implements PersonService {
         personRepository.save(person);
         log.info("Due date yangilandi personId: {} newDueDate: {}", personId, request.dueDate());
         return new ApiResponse("Muddat yangilandi", true, HttpStatus.OK, personMapper.personToResponse(person, 0L));
+    }
+
+    @Override
+    public ApiResponse searchInMahalla(Integer mahallaId, String keyword, User currentUser) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new EmptyKeywordException("Qidiruv so'zi bo'sh bo'lishi mumkin emas");
+        }
+        List<PersonSearchResponse> result = personRepository.searchInMahalla(mahallaId, keyword, currentUser.getId());
+        return new ApiResponse("Qidiruv natijasi", true, HttpStatus.OK, result);
+    }
+
+    @Override
+    public ApiResponse searchAllMahallas(String keyword, User currentUser) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new EmptyKeywordException("Qidiruv so'zi bo'sh bo'lishi mumkin emas");
+        }
+        List<PersonSearchResponse> personSearchResponses = personRepository.searchAllMahallas(keyword, currentUser.getId());
+        return new ApiResponse("Qidiruv natijasi", true, HttpStatus.OK, personSearchResponses);
     }
 
     private Mahalla mahallaFound(Integer mahallaId, Integer userId) {

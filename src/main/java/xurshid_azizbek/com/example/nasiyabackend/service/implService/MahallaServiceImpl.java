@@ -7,13 +7,14 @@ import org.springframework.stereotype.Service;
 import xurshid_azizbek.com.example.nasiyabackend.entity.Mahalla;
 import xurshid_azizbek.com.example.nasiyabackend.entity.User;
 import xurshid_azizbek.com.example.nasiyabackend.exception.AlreadyNameException;
+import xurshid_azizbek.com.example.nasiyabackend.exception.MahallaHasPeopleException;
 import xurshid_azizbek.com.example.nasiyabackend.exception.NotFoundException;
 import xurshid_azizbek.com.example.nasiyabackend.mapper.MahallaMapper;
 import xurshid_azizbek.com.example.nasiyabackend.payload.request.MahallaRequest;
 import xurshid_azizbek.com.example.nasiyabackend.payload.response.ApiResponse;
 import xurshid_azizbek.com.example.nasiyabackend.payload.response.MahallaResponse;
 import xurshid_azizbek.com.example.nasiyabackend.repository.MahallaRepository;
-import xurshid_azizbek.com.example.nasiyabackend.repository.projection.MahallaWithCountProjection;
+import xurshid_azizbek.com.example.nasiyabackend.repository.PersonRepository;
 import xurshid_azizbek.com.example.nasiyabackend.service.interfaceService.MahallaService;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class MahallaServiceImpl implements MahallaService {
 
     private final MahallaRepository mahallaRepository;
     private final MahallaMapper  mahallaMapper;
+    private final PersonRepository personRepository;
 
     @Override
     public ApiResponse createMahalla(User user, MahallaRequest mahallaRequest) {
@@ -101,10 +103,16 @@ public class MahallaServiceImpl implements MahallaService {
         Mahalla mahalla = mahallaRepository.findByIdAndUserIdAndIsDeletedFalse(mahallaId, userId).orElseThrow(
                 () -> new NotFoundException("Mahalla topilmadi")
         );
+
+        if (personRepository.existsByMahallaIdAndIsDeletedFalse(mahallaId)) {
+            throw new MahallaHasPeopleException("Mahalla ichida odamlar mavjud, avval ularni o'chiring");
+        }
+
         mahalla.setIsDeleted(true);
         mahallaRepository.save(mahalla);
         log.info("Mahalla deleted by mahallaId:{} , userId:{}", mahallaId, userId);
-        return new ApiResponse("Mahalla deleted",true,HttpStatus.OK,null);
+        return new ApiResponse("Mahalla deleted", true, HttpStatus.OK, null);
+
     }
 
 

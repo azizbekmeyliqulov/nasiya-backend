@@ -81,4 +81,19 @@ public class GlobalExceptionHandler {
         // Ichki xato matnini clientga chiqarmaymiz — xavfsizlik uchun
         return buildResponse("Serverda xatolik yuz berdi", HttpStatus.INTERNAL_SERVER_ERROR);
     }
+    @ExceptionHandler(PersonHasDebtException.class)
+    public ResponseEntity<ApiResponse> handlePersonHasDebt(PersonHasDebtException ex) {
+        log.warn("Person Has Debt: {} ", ex.getMessage(), ex);
+        return buildResponse(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+    @ExceptionHandler(EmptyKeywordException.class)
+    public ResponseEntity<ApiResponse> handleEmptyKeyword(EmptyKeywordException ex) {
+        log.warn("Empty Keyword: {} ", ex.getMessage(), ex);
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(MahallaHasPeopleException.class)
+    public ResponseEntity<ApiResponse> handleMahallaHasPeople(Exception ex) {
+        log.warn("Mahalla Has People: {} ", ex.getMessage(), ex);
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
 }
