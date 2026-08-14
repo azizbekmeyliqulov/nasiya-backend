@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import xurshid_azizbek.com.example.nasiyabackend.entity.User;
 import xurshid_azizbek.com.example.nasiyabackend.payload.request.PersonDueDateRequest;
+import xurshid_azizbek.com.example.nasiyabackend.payload.request.PersonExtendDueDateRequest;
 import xurshid_azizbek.com.example.nasiyabackend.payload.request.PersonRequest;
 import xurshid_azizbek.com.example.nasiyabackend.payload.response.ApiResponse;
 import xurshid_azizbek.com.example.nasiyabackend.security.CurrentUser;
@@ -69,14 +70,13 @@ public class PersonController {
         ApiResponse response = personService.deletePerson(user, personId);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
-    @PatchMapping("/{personId}/due-date")
+    @PatchMapping("/{personId}/extend-due-date")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN')")
-    @Operation(summary = "Personning qarz muddatini qo'lda o'zgartirish uchun api")
-    public ResponseEntity<ApiResponse> updateDueDate(@CurrentUser User user,
-                                                     @PathVariable Integer mahallaId,
-                                                     @PathVariable Integer personId,
-                                                     @RequestBody @Valid PersonDueDateRequest request) {
-        ApiResponse response = personService.updateDueDate(personId, request, user);
+    public ResponseEntity<ApiResponse> extendDueDate(
+            @PathVariable Integer personId,
+            @Valid @RequestBody PersonExtendDueDateRequest request,
+            @CurrentUser User user) {
+        ApiResponse response = personService.extendDueDate(personId, request, user);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
     @GetMapping("/search")

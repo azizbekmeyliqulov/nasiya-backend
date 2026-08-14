@@ -10,7 +10,7 @@ import xurshid_azizbek.com.example.nasiyabackend.entity.Person;
 import xurshid_azizbek.com.example.nasiyabackend.entity.User;
 import xurshid_azizbek.com.example.nasiyabackend.exception.*;
 import xurshid_azizbek.com.example.nasiyabackend.mapper.PersonMapper;
-import xurshid_azizbek.com.example.nasiyabackend.payload.request.PersonDueDateRequest;
+import xurshid_azizbek.com.example.nasiyabackend.payload.request.PersonExtendDueDateRequest;
 import xurshid_azizbek.com.example.nasiyabackend.payload.request.PersonRequest;
 import xurshid_azizbek.com.example.nasiyabackend.payload.response.ApiResponse;
 import xurshid_azizbek.com.example.nasiyabackend.payload.response.PersonResponse;
@@ -21,6 +21,7 @@ import xurshid_azizbek.com.example.nasiyabackend.repository.PersonRepository;
 import xurshid_azizbek.com.example.nasiyabackend.repository.projection.PersonBalanceProjection;
 import xurshid_azizbek.com.example.nasiyabackend.service.interfaceService.PersonService;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -146,13 +147,20 @@ public class PersonServiceImpl implements PersonService {
     }
 
     @Override
-    public ApiResponse updateDueDate(Integer personId, PersonDueDateRequest request, User currentUser) {
-        log.info("Due date yangilanmoqda personId: {} userId: {}", personId, currentUser.getId());
+    public ApiResponse extendDueDate(Integer personId, PersonExtendDueDateRequest request, User currentUser) {
+        log.info("Due date uzaytirilmoqda personId: {} userId: {}", personId, currentUser.getId());
         Person person = personFound(personId, currentUser.getId());
-        person.setDueDate(request.dueDate());
+
+        if (!person.getDueDate().isBefore(LocalDate.now())) {
+            throw new DueDateNotExpiredException("Muddati hali o'tmagan, uzaytirib bo'lmaydi");
+        }
+
+        LocalDate newDueDate = LocalDate.now().plusDays(request.days());
+        person.setDueDate(newDueDate);
         personRepository.save(person);
-        log.info("Due date yangilandi personId: {} newDueDate: {}", personId, request.dueDate());
-        return new ApiResponse("Muddat yangilandi", true, HttpStatus.OK, personMapper.personToResponse(person, 0L));
+
+        log.info("Due date uzaytirildi personId: {} newDueDate: {}", personId, newDueDate);
+        return new ApiResponse("Muddat uzaytirildi", true, HttpStatus.OK, personMapper.personToResponse(person, 0L));
     }
 
     @Override

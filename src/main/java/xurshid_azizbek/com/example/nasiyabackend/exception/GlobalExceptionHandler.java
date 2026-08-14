@@ -96,4 +96,9 @@ public class GlobalExceptionHandler {
         log.warn("Mahalla Has People: {} ", ex.getMessage(), ex);
         return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
+    @ExceptionHandler(DueDateNotExpiredException.class)
+    public ResponseEntity<ApiResponse> handleDueDateNotExpired(DueDateNotExpiredException ex) {
+        log.warn("Due Date Not Expired: {} ", ex.getMessage(), ex);
+        return buildResponse(ex.getMessage(), HttpStatus.CONFLICT);
+    }
 }
